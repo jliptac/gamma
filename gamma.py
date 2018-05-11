@@ -3,48 +3,44 @@ import math
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-import time
-from matplotlib.ticker import FormatStrFormatter
+
+#calc inverse compton scattering parameters and generate relevant plots
+#created by jliptac on 05.10.2018 
 
 thomsonCrossSection = 0.63e-28 #(m2)
 spotSizeDia = 30 #(um)
 spotSizeArea = math.pi*(spotSizeDia * 1.0e-6 /2.0) ** 2 #(m2)
 
 #interaction laser parameters
-laserWavelength = np.array([1030, 1030/2, 1030/3, 10]) #laser wavelength (nm)
+laserWavelength = np.array([1030/3, 1030/2, 1030]) #laser wavelength (nm)
 laserPhotonEnergy = 4.1357e-15 * 3.0e8 * 1.0e9 / laserWavelength # laser photon energy (eV)
+a0 = 0.03
 
 #geometry
 thetaL = 0.0 
 scatteringAngle = np.linspace(-0.005, 0.005, 10000)
 gammaE = np.array([200/0.511, 325/0.511, 425/0.511])
 approx = 1/gammaE
-thetaRMS = np.linspace(1.0e-6, 5.0e-3, 100000)
 
+
+thetaRMS = np.linspace(1.0e-6, 5.0e-3, 100000)
 BWscan = gammaE[2]**2 * thetaRMS**2
 Ne = 10e-3/1.602e-19
 Nl = 7e18
 Nph = Ne*Nl*thomsonCrossSection/spotSizeArea*BWscan
+BW = np.zeros([len(gammaE),len(thetaRMS)])
+nGammaBW = np.zeros([len(gammaE),len(thetaRMS)])
 
-#plt.figure(5)
-#plt.loglog(BWscan,Nph)
-
-a0 = 0.03
-#ocheck = 4*gammaE*laserPhotonEnergy/0.511e6
-#print('ochec',ocheck)
 print('gammaE',gammaE)
 #gammaPhotonEnergy = 2 * gammaE** 2 * (1+np.cos(thetaL)) * laserPhotonEnergy / (1 + (gammaE * scatteringAngle)**2 + a0**2 + 4*gammaE*laserPhotonEnergy/0.511e6)
 #gammaPhotonEnergy = 2 * gammaE** 2 * (1+np.cos(thetaL)) * laserPhotonEnergy / (1 + np.power(np.multiply(gammaE,scatteringAngle),2) + a0**2 + 4*gammaE*laserPhotonEnergy/0.511e6)
 
 sns.set(color_codes=True)
 colors = (plt.rcParams['axes.prop_cycle'].by_key()['color'])
-#print(colors[1])
 
-gammaPhotonEnergy = np.zeros([len(gammaE),len(scatteringAngle)])
-BW = np.zeros([len(gammaE),len(thetaRMS)])
-nGammaBW = np.zeros([len(gammaE),len(thetaRMS)])
-labelNames = ['250 MeV','400 MeV','525 MeV']
 plt.figure(1)
+gammaPhotonEnergy = np.zeros([len(gammaE),len(scatteringAngle)])
+labelNames = ['250 MeV','400 MeV','525 MeV']
 for i in range(len(gammaE)):
 	gammaPhotonEnergy[i,:] = 2 * gammaE[i]** 2 * (1+np.cos(thetaL)) * laserPhotonEnergy[2] / (1 + np.power(np.multiply(gammaE[i],scatteringAngle),2) + a0**2 + 4*gammaE[i]*laserPhotonEnergy[2]/0.511e6)
 	plt.plot(scatteringAngle*1000,gammaPhotonEnergy[i]/1e6, label = labelNames[i])
@@ -57,26 +53,23 @@ plt.legend()
 plt.xlim([-5,5])
 plt.ylim([0,10])
 
-
+fig,axPrime =plt.subplots()
 electronEnergy = np.linspace(0.5, 800, 1000)
 gammaE = electronEnergy/0.511
 gammaPhotonEnergyV = np.zeros([len(laserPhotonEnergy),len(gammaE)])
-plt.figure(2)
-fig,axPrime =plt.subplots()
 for i in range(len(laserPhotonEnergy)):
 	gammaPhotonEnergyV[i,:] = 2 * np.power(gammaE,2) * (1+np.cos(thetaL)) * laserPhotonEnergy[i] / (1 + np.power(np.multiply(gammaE,0),2) + a0**2 + 4*gammaE*laserPhotonEnergy[i]/0.511e6)
-plt.plot(electronEnergy,gammaPhotonEnergyV[0]/1e6, color=colors[2])
-plt.plot(electronEnergy,gammaPhotonEnergyV[1]/1e6, color=colors[1])
-plt.plot(electronEnergy,gammaPhotonEnergyV[2]/1e6, color=colors[0])
-plt.plot(electronEnergy,gammaPhotonEnergyV[3]/1e6, color=colors[3], ls='--')
+	plt.plot(electronEnergy,gammaPhotonEnergyV[i]/1e6)
 plt.xlabel('Electron Energy (MeV)')
 plt.ylabel('Photon Energy (MeV)')
 plt.title('Photon Energy vs Electron Energy')
-plt.legend(['$\lambda_L$ = 1030 nm','$\lambda_L$ = 515 nm','$\lambda_L$ = 343 nm','$\lambda_L$ = 10 nm'])
+plt.legend(['$\lambda_L$ = 343 nm','$\lambda_L$ = 515 nm','$\lambda_L$ = 1030 nm'])
 plt.axhline(y=10, ls='--', alpha=0.75, color='black')
+plt.axhline(y=5, ls='--', alpha=0.75, color='black')
 plt.xlim([0,800])
 plt.ylim([0,20])
-
+plt.savefig('gammEvsEe.png', bbox_inches='tight')
+plt.savefig('gammEvsEe.pdf', bbox_inches='tight')
 
 laserPowerScan = np.linspace(0.001,10000,10000)
 laserWavelength = 1030/2 #laser wavelength (nm)
