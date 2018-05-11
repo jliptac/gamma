@@ -40,9 +40,9 @@ colors = (plt.rcParams['axes.prop_cycle'].by_key()['color'])
 
 plt.figure(1)
 gammaPhotonEnergy = np.zeros([len(gammaE),len(scatteringAngle)])
-labelNames = ['250 MeV','400 MeV','525 MeV']
+labelNames = ['250 MeV','325 MeV','425 MeV']
 for i in range(len(gammaE)):
-	gammaPhotonEnergy[i,:] = 2 * gammaE[i]** 2 * (1+np.cos(thetaL)) * laserPhotonEnergy[2] / (1 + np.power(np.multiply(gammaE[i],scatteringAngle),2) + a0**2 + 4*gammaE[i]*laserPhotonEnergy[2]/0.511e6)
+	gammaPhotonEnergy[i,:] = 2 * gammaE[i]** 2 * (1+np.cos(thetaL)) * laserPhotonEnergy[0] / (1 + np.power(np.multiply(gammaE[i],scatteringAngle),2) + a0**2 + 4*gammaE[i]*laserPhotonEnergy[0]/0.511e6)
 	plt.plot(scatteringAngle*1000,gammaPhotonEnergy[i]/1e6, label = labelNames[i])
 	#plt.axvline(x=1/gammaE[i]*1000*.0316, ls='--', alpha=0.5, color=colors[i])
 	#plt.axvline(x=-1/gammaE[i]*1000*.0316, ls='--', alpha=0.5, color=colors[i])
@@ -72,10 +72,11 @@ plt.savefig('gammEvsEe.png', bbox_inches='tight')
 plt.savefig('gammEvsEe.pdf', bbox_inches='tight')
 
 laserPowerScan = np.linspace(0.001,10000,10000)
-laserWavelength = 1030/2 #laser wavelength (nm)
+laserWavelength = 1030/3 #laser wavelength (nm)
 laserPhotonEnergy = 4.1357e-15 * 3.0e8 * 1.0e9 / laserWavelength # laser photon energy (eV)
-laserFreqMultEff = 0.5
+laserFreqMultEff = 0.4 #3w estimate
 nLaserPhotonScan = laserPowerScan * 6.242e18 *laserFreqMultEff / laserPhotonEnergy
+
 plt.figure(4)
 fig,axPrime2 =plt.subplots()
 axTopNe= axPrime2.twiny()
@@ -108,14 +109,9 @@ axTopNe.set_xscale('log')
 # #axTopNe.set_xticks(axPrimelocs,axPrimeLabels)
 # #axTopNe.xaxis.set_major_formatter(FormatStrFormatter('%.1e'))
 # axTopNe.grid(False)
-
 # axRightNl.set_ylabel(r'Number of Laser Photons ($N_L$)')
 # axRightNl.grid(False)
 # axPrime2.set_xlim([1e-5,1])
-
-
-
-
 #axTopNe.set_xlim([1e-5,1])
 
 
@@ -139,7 +135,7 @@ rfPowerMarginFactor = 1.1
 totalPeakRFPower = (peakBeamPower + peakStructurePower)*rfPowerMarginFactor
 totalAverageRFPower = totalPeakRFPower * dutyFactor
 
-
+#uncomment to generate rf power plot with interactive contour labeling
 # plt.ion()
 # fig,axPrime =plt.subplots()
 # im=axPrime.contourf(electronEnergyScan,averageBeamCurrent,totalAverageRFPower, cmap='YlOrRd', alpha=.6,levels=np.arange(0.0,1.5,0.05))
