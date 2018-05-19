@@ -3,6 +3,7 @@ import math
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+from matplotlib.ticker import FormatStrFormatter
 
 #calc inverse compton scattering parameters and generate relevant plots
 #created by jliptac on 05.10.2018 
@@ -31,7 +32,7 @@ Nph = Ne*Nl*thomsonCrossSection/spotSizeArea*BWscan
 BW = np.zeros([len(gammaE),len(thetaRMS)])
 nGammaBW = np.zeros([len(gammaE),len(thetaRMS)])
 
-print('gammaE',gammaE)
+#print('gammaE',gammaE)
 #gammaPhotonEnergy = 2 * gammaE** 2 * (1+np.cos(thetaL)) * laserPhotonEnergy / (1 + (gammaE * scatteringAngle)**2 + a0**2 + 4*gammaE*laserPhotonEnergy/0.511e6)
 #gammaPhotonEnergy = 2 * gammaE** 2 * (1+np.cos(thetaL)) * laserPhotonEnergy / (1 + np.power(np.multiply(gammaE,scatteringAngle),2) + a0**2 + 4*gammaE*laserPhotonEnergy/0.511e6)
 
@@ -64,56 +65,34 @@ plt.xlabel('Electron Energy (MeV)')
 plt.ylabel('Photon Energy (MeV)')
 plt.title('Photon Energy vs Electron Energy')
 plt.legend(['$\lambda_L$ = 343 nm','$\lambda_L$ = 515 nm','$\lambda_L$ = 1030 nm'])
-plt.axhline(y=10, ls='--', alpha=0.75, color='black')
-plt.axhline(y=5, ls='--', alpha=0.75, color='black')
+plt.axhline(y=10, ls='--', alpha=0.5, color='black')
+plt.axhline(y=5, ls='--', alpha=0.5, color='black')
 plt.xlim([0,800])
 plt.ylim([0,20])
 plt.savefig('gammEvsEe.png', bbox_inches='tight')
 plt.savefig('gammEvsEe.pdf', bbox_inches='tight')
 
+plt.figure(3)
 laserPowerScan = np.linspace(0.001,10000,10000)
 laserWavelength = 1030/3 #laser wavelength (nm)
 laserPhotonEnergy = 4.1357e-15 * 3.0e8 * 1.0e9 / laserWavelength # laser photon energy (eV)
 laserFreqMultEff = 0.4 #3w estimate
 nLaserPhotonScan = laserPowerScan * 6.242e18 *laserFreqMultEff / laserPhotonEnergy
-
-plt.figure(4)
-fig,axPrime2 =plt.subplots()
-axTopNe= axPrime2.twiny()
-axRightNl= axPrime2.twinx()
-#xPrimeTicks = axPrime2.get_xticks()
-#xTopTicks = xPrimeTicks/100
-#axTopNe.set_xticks(xTopTicks)
-
-BW = 1e-3
-neGamma1e12 = 1.0e12*spotSizeArea/thomsonCrossSection/nLaserPhotonScan/BW*1.602e-19
-neGamma1e13 = 1.0e13*spotSizeArea/thomsonCrossSection/nLaserPhotonScan/BW*1.602e-19
-neGamma1e14 = 1.0e14*spotSizeArea/thomsonCrossSection/nLaserPhotonScan/BW*1.602e-19
-axPrime2.loglog(neGamma1e12, laserPowerScan)
-axPrime2.loglog(neGamma1e13, laserPowerScan)
-axPrime2.loglog(neGamma1e14, laserPowerScan)
-axPrime2.loglog(nLaserPhotonScan*1.602e-19, laserPowerScan, color='black', alpha=0.5, ls='--')
-axPrime2.set_ylim([1e-2,1e4])
-axPrime2.set_xlim([1e-6,1])
-axPrime2.set_xlabel('Average Electron Current (A) $\propto N_e$')
-axPrime2.set_ylabel('Average Laser Power (W) $\propto N_L$')
-#axPrime2.title('Idealized Photon Output ($\lambda_L$ = 515 nm)')
-axPrime2.legend(['N$_\gamma = 10^{12}$ (1/s)','N$_\gamma = 10^{13}$ (1/s)','N$_\gamma = 10^{14}$ (1/s)'])
-
-axTopNe.set_xlabel(r'Number of Electrons ($N_e$)')
-axTopNe.set_xscale('log')
-#axTopNe.set_xlim(axPrime2.get_xlim())
-#axPrimelocs,axPrimeLabels = axPrime2.get_xticks()
-# xTopTicks = xPrimeTicks/1.602e-19
-# print(xPrimeTicks)
-# #axTopNe.set_xticks(axPrimelocs,axPrimeLabels)
-# #axTopNe.xaxis.set_major_formatter(FormatStrFormatter('%.1e'))
-# axTopNe.grid(False)
-# axRightNl.set_ylabel(r'Number of Laser Photons ($N_L$)')
-# axRightNl.grid(False)
-# axPrime2.set_xlim([1e-5,1])
-#axTopNe.set_xlim([1e-5,1])
-
+BW = 1e-3 #fractional bandwidth
+gammaOutput = np.geomspace(1.0e12,1.0e14,num=3)
+print(gammaOutput)
+for i in range(len(gammaOutput)):
+	nElectrons = gammaOutput[i]*spotSizeArea/thomsonCrossSection/nLaserPhotonScan/BW*1.602e-19
+	plt.loglog(nElectrons, laserPowerScan)
+plt.loglog(nLaserPhotonScan*1.602e-19, laserPowerScan, color='black', alpha=0.5, ls='--')
+plt.xlim([1e-6,1])
+plt.ylim([1e-2,1e4])
+plt.xlabel('Average Electron Current (A) $\propto N_e$')
+plt.ylabel('Average Laser Power (W) $\propto N_L$')
+plt.legend(['N$_\gamma = 10^{12}$ (1/s)','N$_\gamma = 10^{13}$ (1/s)','N$_\gamma = 10^{14}$ (1/s)'])
+plt.title(r'Number of Output Photons (N$_\gamma$), with $\lambda_L$ = 343 nm')
+plt.savefig('gammaOutput.png', bbox_inches='tight')
+plt.savefig('gammaOutput.pdf', bbox_inches='tight')
 
 #rf power calculation based on xband system
 gradient = np.array([50, 100, 150, 80])
@@ -127,7 +106,7 @@ dutyFactor = pulseWidth * 1e-6 * repRate
 peakBeamCurrent = chargePerRepScan / beamPulseWidth /1e3 #(mA)
 averageBeamCurrent = chargePerRepScan *1e-12 * repRate *1e6 #(uA)
 eg,ig = np.meshgrid(electronEnergyScan,peakBeamCurrent)
-shuntImpedance = 160 #(Mohms m)
+shuntImpedance = 160 #(Mohms m) *2.2 LN2 cooling, *4.6 He.
 peakBeamPower = eg*ig/1e3
 systemLength = eg/gradient[2]
 peakStructurePower = eg*eg/systemLength/shuntImpedance
@@ -154,18 +133,86 @@ totalAverageRFPower = totalPeakRFPower * dutyFactor
 # xPrimeTicks = axPrime.get_xticks()
 # xTopTicks = xPrimeTicks/gradient[2]
 # axTop.set_xticks(xTopTicks)
+# axTop.xaxis.set_major_formatter(FormatStrFormatter('%1.1f'))
 # axTop.grid(False)
-# axTop.set_xlabel(r'Accelerator Length (m) with $\nabla$= 100 MeV/m')
+# axTop.set_xlabel(r'Accelerator Length (m) with $\nabla$ = 100 MeV/m')
 # axPrime.grid(True, color='#95a5a6')
 # axPrime.set_facecolor('#ffffff')
-# axPrime.axvline(x=525, ls='--', alpha=0.8, color=colors[0])
-# axPrime.axvline(x=300, ls='--', alpha=0.8, color=colors[0])
+# axPrime.axvline(x=525, ls='--', alpha=0.5, color='black')
+# axPrime.axvline(x=300, ls='--', alpha=0.5, color='black')
 # plt.ioff()
+# plt.savefig('rfPower.png', bbox_inches='tight')
+# plt.savefig('rfPower.png', bbox_inches='tight')
 
-#calculate system params
-#Ee = 
-#laserWavelength = 
-#electronCurremt = 
 
-#test git
-plt.show()
+#plt.show()
+
+
+
+def calcSysParams(eG):
+	print('Gamma Energy,', eG, 'MeV')
+	#,BW,Ng,eE,grad,shuntZ,repRate,laserWavelength,eLaser
+	return  'yo'
+
+def calcIntLaser(wavelength, pulseEnergy, repRate, efficiency):
+	laserPhotonEnergy = 4.1357e-15 * 3.0e8 * 1.0e9 / wavelength # laser photon energy (eV) with wavelength (nm)
+	avgLaserPower = pulseEnergy * repRate # W from J * Hz
+	nLaser = avgLaserPower * 6.242e18 * efficiency / laserPhotonEnergy
+	print('-- Interaction Laser Parameters --')
+	print('Pulse Energy (J):', pulseEnergy)
+	print('Repetition Rate (Hz):', repRate)
+	print('Wavelength (nm):', wavelength)
+	print('Average Laser Power (W):',avgLaserPower)
+	print('Number of Laser Photons (#/s):', '{:.2e}'.format(nLaser))
+	#laserParams = [avgLaserPower,nLaser,laserPhotonEnergy]
+	return nLaser
+
+def calcXband(grad,eMax,repRate,shuntZ,averageBeamCurrent):
+	nMicroBunch = 1000 #assume 1000 microbunches
+	f = 11.424e9 #xband (Hz)
+	beamPulseWidth = nMicroBunch/f*1e6 #(us)
+	rfRiseFallTime = 0.5 #(us)
+	pulseWidth = beamPulseWidth + rfRiseFallTime #total pulse width (us)
+	chargePerRepScan = averageBeamCurrent * 1e-6 * 1e12 / repRate #pc #np.linspace(1,100*1000,1000) #(pC)
+	chargePerMicrobunch = chargePerRepScan / 1000 #pC
+	dutyFactor = pulseWidth * 1e-6 * repRate
+	peakBeamCurrent = chargePerRepScan / beamPulseWidth /1e3 #(mA)
+	#averageBeamCurrent = chargePerRepScan * 1e-12 * repRate * 1e6 #(uA)
+	eg,ig = np.meshgrid(electronEnergyScan,peakBeamCurrent)
+	#shuntImpedance = 160 #(Mohms m) *2.2 LN2 cooling, *4.6 He.
+	peakBeamPower = eMax*peakBeamCurrent/1e3
+	systemLength = eMax/grad
+	peakStructurePower = eMax**2/systemLength/shuntZ
+	rfPowerMarginFactor = 1.1
+	totalPeakRFPower = (peakBeamPower + peakStructurePower)*rfPowerMarginFactor
+	totalAverageRFPower = totalPeakRFPower * dutyFactor *1e3
+	nElectrons = averageBeamCurrent*1e-6/1.602e-19
+	print('-- X-Band Accelerator Parameters --')
+	print('Electron Energy (MeV):', eMax)
+	print('Gradient (MV/m):', grad)
+	print('Repetition Rate (Hz):', repRate)
+	print('Average Current (uA):', averageBeamCurrent)
+	print('Number of Electrons (#/s):', '{:.2e}'.format(nElectrons))
+	print('Average RF Power (kW):',totalAverageRFPower)
+	print('Peak RF Power (MW):',totalPeakRFPower)
+	print('Accelerator Length (m):', systemLength)
+	print('chargePerMicrobunch (pC):', chargePerMicrobunch)
+
+#calculate and print system params
+
+print('-- ICS System Parameters --')
+eG = 5 #max gamma energy (Mev)
+Ng = 1e14 #number of output gammas per second
+BW = 1e-3 #fractional bandwidth
+grad = 100
+repRate = 1000
+shuntZ = 160
+#prescribe gamma and laser params to calc electrons
+
+#maybe need lookup unless solve analytic
+calcXband(grad,300,repRate,shuntZ,10)
+
+x = calcIntLaser(343, 1, 1000, 0.5)
+
+print(x)
+calcSysParams(5)
