@@ -32,10 +32,6 @@ Nph = Ne*Nl*thomsonCrossSection/spotSizeArea*BWscan
 BW = np.zeros([len(gammaE),len(thetaRMS)])
 nGammaBW = np.zeros([len(gammaE),len(thetaRMS)])
 
-#print('gammaE',gammaE)
-#gammaPhotonEnergy = 2 * gammaE** 2 * (1+np.cos(thetaL)) * laserPhotonEnergy / (1 + (gammaE * scatteringAngle)**2 + a0**2 + 4*gammaE*laserPhotonEnergy/0.511e6)
-#gammaPhotonEnergy = 2 * gammaE** 2 * (1+np.cos(thetaL)) * laserPhotonEnergy / (1 + np.power(np.multiply(gammaE,scatteringAngle),2) + a0**2 + 4*gammaE*laserPhotonEnergy/0.511e6)
-
 sns.set(color_codes=True)
 colors = (plt.rcParams['axes.prop_cycle'].by_key()['color'])
 
@@ -80,7 +76,6 @@ laserFreqMultEff = 0.4 #3w estimate
 nLaserPhotonScan = laserPowerScan * 6.242e18 *laserFreqMultEff / laserPhotonEnergy
 BW = 1e-3 #fractional bandwidth
 gammaOutput = np.geomspace(1.0e12,1.0e14,num=3)
-print(gammaOutput)
 for i in range(len(gammaOutput)):
 	nElectrons = gammaOutput[i]*spotSizeArea/thomsonCrossSection/nLaserPhotonScan/BW*1.602e-19
 	plt.loglog(nElectrons, laserPowerScan)
@@ -95,7 +90,7 @@ plt.savefig('gammaOutput.png', bbox_inches='tight')
 plt.savefig('gammaOutput.pdf', bbox_inches='tight')
 
 #rf power calculation based on xband system
-gradient = np.array([50, 100, 150, 80])
+gradient = 150.0
 electronEnergyScan = np.linspace(1, 1000, 1000) #MeV
 beamPulseWidth = 1000/11.424e9*1e6 #1000 microbunches at x-band (us)
 rfRiseFallTime = 0.5 # (us)
@@ -106,113 +101,39 @@ dutyFactor = pulseWidth * 1e-6 * repRate
 peakBeamCurrent = chargePerRepScan / beamPulseWidth /1e3 #(mA)
 averageBeamCurrent = chargePerRepScan *1e-12 * repRate *1e6 #(uA)
 eg,ig = np.meshgrid(electronEnergyScan,peakBeamCurrent)
-shuntImpedance = 160 #(Mohms m) *2.2 LN2 cooling, *4.6 He.
+shuntImpedance = 352 #(Mohms m) 160 Cu, 160*2.2 w/LN2 cooling, *4.6 w/He.
 peakBeamPower = eg*ig/1e3
-systemLength = eg/gradient[2]
+systemLength = eg/gradient
 peakStructurePower = eg*eg/systemLength/shuntImpedance
 rfPowerMarginFactor = 1.1
 totalPeakRFPower = (peakBeamPower + peakStructurePower)*rfPowerMarginFactor
 totalAverageRFPower = totalPeakRFPower * dutyFactor
 
 #uncomment to generate rf power plot with interactive contour labeling
-# plt.ion()
-# fig,axPrime =plt.subplots()
-# im=axPrime.contourf(electronEnergyScan,averageBeamCurrent,totalAverageRFPower, cmap='YlOrRd', alpha=.6,levels=np.arange(0.0,1.5,0.05))
-# #for c in im.collections:
-# #    c.set_edgecolor('red')
-# cbar = fig.colorbar(im, ax=axPrime)
-# cbar.set_label('Average RF Power (MW)')
-# powerLevels = np.arange(0.1,1.0,.1)
-# contours = axPrime.contour(electronEnergyScan,averageBeamCurrent,totalAverageRFPower, colors='black',levels=powerLevels, alpha=0.75)
+plt.ion()
+fig,axPrime =plt.subplots()
+im=axPrime.contourf(electronEnergyScan,averageBeamCurrent,totalAverageRFPower, cmap='YlOrRd', alpha=.6,levels=np.arange(0.0,1.5,0.05))
+cbar = fig.colorbar(im, ax=axPrime)
+cbar.set_label('Average RF Power (MW)')
+powerLevels = np.arange(0.1,1.0,.1)
+contours = axPrime.contour(electronEnergyScan,averageBeamCurrent,totalAverageRFPower, colors='black',levels=powerLevels, alpha=0.75)
 
-# plt.clabel(contours, fontsize=10, colors='black', fmt=r'%1.1f', manual=True)
-# axPrime.set_xlabel('Electon Energy (MeV)')
-# axPrime.set_ylabel('Average Electron Current ($\mu$A) $\propto N_e$')
+plt.clabel(contours, fontsize=10, colors='black', fmt=r'%1.1f', manual=True)
+axPrime.set_xlabel('Electon Energy (MeV)')
+axPrime.set_ylabel('Average Electron Current ($\mu$A) $\propto N_e$')
 
-# axTop= axPrime.twiny()
-# xPrimeTicks = axPrime.get_xticks()
-# xTopTicks = xPrimeTicks/gradient[2]
-# axTop.set_xticks(xTopTicks)
-# axTop.xaxis.set_major_formatter(FormatStrFormatter('%1.1f'))
-# axTop.grid(False)
-# axTop.set_xlabel(r'Accelerator Length (m) with $\nabla$ = 100 MeV/m')
-# axPrime.grid(True, color='#95a5a6')
-# axPrime.set_facecolor('#ffffff')
-# axPrime.axvline(x=525, ls='--', alpha=0.5, color='black')
-# axPrime.axvline(x=300, ls='--', alpha=0.5, color='black')
-# plt.ioff()
-# plt.savefig('rfPower.png', bbox_inches='tight')
-# plt.savefig('rfPower.png', bbox_inches='tight')
-
-
-#plt.show()
-
-
-
-def calcSysParams(eG):
-	print('Gamma Energy,', eG, 'MeV')
-	#,BW,Ng,eE,grad,shuntZ,repRate,laserWavelength,eLaser
-	return  'yo'
-
-def calcIntLaser(wavelength, pulseEnergy, repRate, efficiency):
-	laserPhotonEnergy = 4.1357e-15 * 3.0e8 * 1.0e9 / wavelength # laser photon energy (eV) with wavelength (nm)
-	avgLaserPower = pulseEnergy * repRate # W from J * Hz
-	nLaser = avgLaserPower * 6.242e18 * efficiency / laserPhotonEnergy
-	print('-- Interaction Laser Parameters --')
-	print('Pulse Energy (J):', pulseEnergy)
-	print('Repetition Rate (Hz):', repRate)
-	print('Wavelength (nm):', wavelength)
-	print('Average Laser Power (W):',avgLaserPower)
-	print('Number of Laser Photons (#/s):', '{:.2e}'.format(nLaser))
-	#laserParams = [avgLaserPower,nLaser,laserPhotonEnergy]
-	return nLaser
-
-def calcXband(grad,eMax,repRate,shuntZ,averageBeamCurrent):
-	nMicroBunch = 1000 #assume 1000 microbunches
-	f = 11.424e9 #xband (Hz)
-	beamPulseWidth = nMicroBunch/f*1e6 #(us)
-	rfRiseFallTime = 0.5 #(us)
-	pulseWidth = beamPulseWidth + rfRiseFallTime #total pulse width (us)
-	chargePerRepScan = averageBeamCurrent * 1e-6 * 1e12 / repRate #pc #np.linspace(1,100*1000,1000) #(pC)
-	chargePerMicrobunch = chargePerRepScan / 1000 #pC
-	dutyFactor = pulseWidth * 1e-6 * repRate
-	peakBeamCurrent = chargePerRepScan / beamPulseWidth /1e3 #(mA)
-	#averageBeamCurrent = chargePerRepScan * 1e-12 * repRate * 1e6 #(uA)
-	eg,ig = np.meshgrid(electronEnergyScan,peakBeamCurrent)
-	#shuntImpedance = 160 #(Mohms m) *2.2 LN2 cooling, *4.6 He.
-	peakBeamPower = eMax*peakBeamCurrent/1e3
-	systemLength = eMax/grad
-	peakStructurePower = eMax**2/systemLength/shuntZ
-	rfPowerMarginFactor = 1.1
-	totalPeakRFPower = (peakBeamPower + peakStructurePower)*rfPowerMarginFactor
-	totalAverageRFPower = totalPeakRFPower * dutyFactor *1e3
-	nElectrons = averageBeamCurrent*1e-6/1.602e-19
-	print('-- X-Band Accelerator Parameters --')
-	print('Electron Energy (MeV):', eMax)
-	print('Gradient (MV/m):', grad)
-	print('Repetition Rate (Hz):', repRate)
-	print('Average Current (uA):', averageBeamCurrent)
-	print('Number of Electrons (#/s):', '{:.2e}'.format(nElectrons))
-	print('Average RF Power (kW):',totalAverageRFPower)
-	print('Peak RF Power (MW):',totalPeakRFPower)
-	print('Accelerator Length (m):', systemLength)
-	print('chargePerMicrobunch (pC):', chargePerMicrobunch)
-
-#calculate and print system params
-
-print('-- ICS System Parameters --')
-eG = 5 #max gamma energy (Mev)
-Ng = 1e14 #number of output gammas per second
-BW = 1e-3 #fractional bandwidth
-grad = 100
-repRate = 1000
-shuntZ = 160
-#prescribe gamma and laser params to calc electrons
-
-#maybe need lookup unless solve analytic
-calcXband(grad,300,repRate,shuntZ,10)
-
-x = calcIntLaser(343, 1, 1000, 0.5)
-
-print(x)
-calcSysParams(5)
+axTop= axPrime.twiny()
+xPrimeTicks = axPrime.get_xticks()
+xTopTicks = xPrimeTicks/gradient
+axTop.set_xticks(xTopTicks)
+axTop.xaxis.set_major_formatter(FormatStrFormatter('%1.1f'))
+axTop.grid(False)
+axTop.set_xlabel(r'Accelerator Length (m) with $\nabla$ = 150 MeV/m')
+axPrime.grid(True, color='#95a5a6')
+axPrime.set_facecolor('#ffffff')
+axPrime.axvline(x=736, ls='--', alpha=0.5, color='black')
+axPrime.axvline(x=300, ls='--', alpha=0.5, color='black')
+plt.ioff()
+plt.savefig('rfPower.png', bbox_inches='tight')
+plt.savefig('rfPower.png', bbox_inches='tight')
+plt.show()
